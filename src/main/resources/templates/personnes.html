@@ -1,0 +1,162 @@
+<!DOCTYPE html SYSTEM "http://www.thymeleaf.org/dtd/xhtml1-strict-thymeleaf-spring4-4.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>TEST1</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</head>
+<body>
+<br/><br/>
+<div class="content">
+    <div class="col-md-8 col-md-offset-2">
+        <button type="button" id="nouveau" class="btn btn-primary nouveau" data-toggle="modal" data-target="#exampleModal" data-whatever="@mdo">NOUVEAU</button>
+        <br/>
+        <br/>
+        <div class="panel panel-info">
+            <div class="panel-heading">Liste des clients</div>
+            <div class="panel-body">
+                <table class="table table-bordered table-striped">
+                    <tr>
+                        <th>Code</th><th>Téléphone</th><th>Nom</th><th>Options</th>
+                    </tr>
+                    <tr th:each="personne:${personnes}">
+                        <td th:text="${personne.code}"></td>
+                        <td th:text="${personne.tel}"></td>
+                        <td th:text="${personne.nom}"></td>
+                        <td><a
+                                class="btn btn-primary edit" href="#"
+                                role="button" data-toggle="modal" th:data="${personne.id}" data-target="#exampleModal">edit</a>
+                            <a
+                                    class="btn btn-danger remove" href="#" th:data="${personne.id+'-'+personne.tel+'-'+personne.nom}" id="remove"
+                                    role="button" data-toggle="modal" data-target="#confirmModal">Supprimer</a>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Ajout d'une personne</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form  action="#"  th:action="@{/personnes/add}" th:object="${personne}" id="form1" method="post">
+            <div class="modal-body">
+                    <div class="form-group">
+                        <label for="code">Code</label>
+                        <input th:field="*{code}" type="text" class="form-control" id="code"  placeholder="Entrer le code">
+                    </div>
+                    <div class="form-group">
+                        <label for="nom">Nom</label>
+                        <input type="text" th:field="*{nom}" class="form-control" id="nom"  placeholder="Entrer le nom">
+                    </div>
+                    <div class="form-group">
+                        <label for="tel">Téléphone</label>
+                        <input th:field="*{tel}" type="text" class="form-control" id="tel"  placeholder="Entrer le téléphone">
+                    </div>
+                    <div class="form-check">
+                        <label>
+                            <input type="checkbox" name="pays" id="pays"
+                                   th:each="pay : ${allpays}"
+                                   th:text="${pay.libelle}"
+                                   th:value="${pay.id}"
+                                   th:field="*{pays}"
+                            />
+                        </label>
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+                <button id="save" type="submit" class="btn btn-primary">Enregister</button>
+            </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">Suppression d'une perosnne</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="form2" method="post" action="/personnes/remove">
+                <div class="modal-body" id="contentConfirm">
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                </div>
+                <input type="hidden" id="personne_id" name="personne_id">
+            </form>
+        </div>
+    </div>
+</div>
+</html>
+<script type="application/javascript">
+    $(document).ready(function () {
+        $("#save").click(function () {
+            $("#pays").val($('#pays').val())
+        });
+        $("#nouveau").click(function () {
+            $('#form1').attr('action','/personnes/add');
+        })
+
+        /* Update d'une peronne*/
+
+        function get($, bouton){
+            var personne_id = $(bouton).attr('data');
+            $.ajax({
+                url:'/personnes/'+personne_id,
+                type:"GET",
+                dataType:"json",
+                success:function (data) {
+                    var tabPays = []
+                    data.payss.forEach(e => {
+                        console.log(e)
+                        tabPays.push(e.id)
+                    });
+                    console.log(tabPays);
+                    $('#code').val(data.code);
+                    $('#nom').val(data.nom);
+                    $('#tel').val(data.tel);
+                    $('#pays').val(tabPays);
+                    $('#personne_id').val(data.id);
+                },
+                error:function (err) {
+                    console.log(err);
+                }
+            })
+        }
+        $('.edit').click(function () {
+            $('#form1').attr('action','/personnes/add');
+            get($, $(this));
+            $('#action').val('update');
+            $('#nom').removeAttr('readonly');
+            $('#code').removeAttr('readonly');
+        })
+        /* Supression d'une personne*/
+        $('.remove').click(function () {
+            var data = $(this).attr("data").split('-');
+            $('#personne_id').val(data[0]);
+            $('#contentConfirm').empty();
+            $('#contentConfirm').append('Êtes-vous sur de vouloir supprimer ['+data[2]+' '+data[1]+']');
+        });
+    })
+</script>
